@@ -1,5 +1,10 @@
-// Wolt — Επισκέψεις / app.js (v9) — χωρίς πεδία Αλυσίδα/Υποκατηγορία στη φόρμα
-console.log("Wolt Visits — JS version 9");
+// Wolt Visits — JS version 10 (no chain/sub fields in form)
+// Kill any service workers on this origin (prevents old cached JS)
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(rs => {
+    rs.forEach(r => r.unregister().catch(()=>{}));
+  });
+}
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 const todayISO = () => new Date().toISOString().slice(0, 10);
@@ -31,8 +36,6 @@ function App(){
   });
 
   React.useEffect(()=>save("wv_visits", visits), [visits]);
-
-  // Κρατάμε chain/sub μόνο εσωτερικά (για αποθήκευση και φίλτρα), δεν τα δείχνουμε στη φόρμα
   React.useEffect(()=>{
     setForm(f=>({ ...f, chain: nav.chain || "", sub: nav.sub || "" }));
   }, [nav.chain, nav.sub]);
@@ -48,7 +51,6 @@ function App(){
 
   return (
     React.createElement("div", {className:"min-h-screen md:flex bg-gray-50"},
-      /* ===== Sidebar ===== */
       React.createElement("aside", {className:"md:w-72 border-r bg-white"},
         React.createElement("div", {className:"p-3 border-b flex items-center justify-between"},
           React.createElement("div",{className:"text-sm font-semibold"},"Μενού"),
@@ -94,7 +96,7 @@ function App(){
             )
         )
       ),
-      /* ===== Main ===== */
+
       React.createElement("main",{className:"flex-1 p-4 space-y-4"},
         React.createElement("header",{className:"flex items-center justify-between"},
           React.createElement("h1",{className:"text-xl font-bold"},"Wolt — Επισκέψεις"),
@@ -102,40 +104,30 @@ function App(){
             (nav.chain||"—") + (nav.sub? ` • ${nav.sub}` : "")
           )
         ),
+
         (nav.level==="sub" && nav.chain && nav.sub) &&
           React.createElement("section",{className:"bg-white rounded-2xl p-3 shadow"},
             React.createElement("h2",{className:"font-semibold mb-2"},"Νέα επίσκεψη"),
-            // ✅ ΜΟΝΟ τα 5 πεδία που ζήτησες
+            // ΜΟΝΟ τα 5 πεδία
             React.createElement("div",{className:"grid grid-cols-1 md:grid-cols-3 gap-3"},
-              Select("Owner Name", {
-                value:form.ownerName,
-                onChange:e=>setForm({...form, ownerName:e.target.value})
-              }, MEMBERS.map(n=>React.createElement("option",{key:n,value:n},n))),
-              Input("Venue city", {
-                value:form.venueCity,
-                onChange:e=>setForm({...form, venueCity:e.target.value})
-              }),
-              Input("Visit Date", {
-                type:"date",
-                value:form.visitDate,
-                onChange:e=>setForm({...form, visitDate:e.target.value})
-              }),
-              Select("Needs Follow Up", {
-                value:form.needsFollowUp,
-                onChange:e=>setForm({...form, needsFollowUp:e.target.value})
-              },
+              Select("Owner Name", { value:form.ownerName, onChange:e=>setForm({...form, ownerName:e.target.value}) },
+                MEMBERS.map(n=>React.createElement("option",{key:n,value:n},n))
+              ),
+              Input("Venue city", { value:form.venueCity, onChange:e=>setForm({...form, venueCity:e.target.value}) }),
+              Input("Visit Date", { type:"date", value:form.visitDate, onChange:e=>setForm({...form, visitDate:e.target.value}) }),
+              Select("Needs Follow Up", { value:form.needsFollowUp, onChange:e=>setForm({...form, needsFollowUp:e.target.value}) },
                 React.createElement("option",{value:"no"},"no"),
                 React.createElement("option",{value:"yes"},"yes"),
               ),
-              Select("Visit Status", {
-                value:form.visitStatus,
-                onChange:e=>setForm({...form, visitStatus:e.target.value})
-              }, VISIT_STATUSES.map(s=>React.createElement("option",{key:s.id,value:s.id},s.label))),
+              Select("Visit Status", { value:form.visitStatus, onChange:e=>setForm({...form, visitStatus:e.target.value}) },
+                VISIT_STATUSES.map(s=>React.createElement("option",{key:s.id,value:s.id},s.label))
+              ),
             ),
             React.createElement("div",{className:"mt-3 flex justify-end"},
               React.createElement("button",{className:"px-4 py-2 rounded-2xl bg-blue-600 text-white", onClick:addVisit},"Αποθήκευση")
             )
           ),
+
         (nav.chain || nav.sub) &&
           React.createElement("section",{className:"bg-white rounded-2xl p-3 shadow"},
             React.createElement("h2",{className:"font-semibold mb-2"},"Επισκέψεις"),
@@ -180,11 +172,7 @@ function Card({v, onUpdate, onRemove}){
         React.createElement("div",{className:"text-xs"}, `Follow up: ${v.needsFollowUp} • Status: ${v.visitStatus}`)
       ),
       React.createElement("div",{className:"flex items-center gap-2"},
-        React.createElement("select",{
-          className:"rounded-xl border px-2 py-1 text-xs",
-          value:v.visitStatus,
-          onChange:e=>onUpdate(v.id,{ visitStatus: e.target.value })
-        },
+        React.createElement("select",{className:"rounded-xl border px-2 py-1 text-xs", value:v.visitStatus, onChange:e=>onUpdate(v.id,{ visitStatus: e.target.value })},
           React.createElement("option",{value:"planned"},"planned"),
           React.createElement("option",{value:"done"},"done"),
         ),
