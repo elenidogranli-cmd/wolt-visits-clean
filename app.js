@@ -1,4 +1,4 @@
-// Wolt — Επισκέψεις (clean impl) — ζητούμενες αλλαγές
+// Wolt — Επισκέψεις (app.js) — χωρίς πεδία Αλυσίδα/Υποκατηγορία στη φόρμα
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 const todayISO = () => new Date().toISOString().slice(0, 10);
@@ -7,7 +7,7 @@ const load = (k,f)=>{ try{const v=JSON.parse(localStorage.getItem(k)); return v?
 
 // Μενού → Αλυσίδες → Υποκατηγορίες
 const CHAINS = [
-  { name: "Μασούτης", subs: ["Αγγελάκη", "Μακεδονίας"] },
+  { name: "Μασούτης",   subs: ["Αγγελάκη", "Μακεδονίας"] },
   { name: "Σκλαβενίτης", subs: ["Αγγελάκη", "Μακεδονίας"] },
 ];
 
@@ -20,12 +20,12 @@ const VISIT_STATUSES = [
 
 function App(){
   const [nav, setNav] = React.useState({ level: "menu", chain: null, sub: null });
-  const [menuQuery, setMenuQuery] = React.useState(""); // αναζήτηση μενού
+  const [menuQuery, setMenuQuery] = React.useState("");          // αναζήτηση στο μενού
   const [visits, setVisits] = React.useState(()=>load("wv_visits", []));
   const [form, setForm] = React.useState({
     id:"", chain:"", sub:"",
     ownerName: MEMBERS[0],
-    venueCity:"",
+    venueCity: "",
     visitDate: todayISO(),
     needsFollowUp: "no",
     visitStatus: "planned",
@@ -33,7 +33,7 @@ function App(){
 
   React.useEffect(()=>save("wv_visits", visits), [visits]);
 
-  // Όταν αλλάζει context, ενημέρωσε τη φόρμα
+  // συγχρονισμός context -> φόρμα (χωρίς να το δείχνουμε στη φόρμα)
   React.useEffect(()=>{
     setForm(f=>({ ...f, chain: nav.chain || "", sub: nav.sub || "" }));
   }, [nav.chain, nav.sub]);
@@ -42,16 +42,15 @@ function App(){
     if(!form.chain || !form.sub){ alert("Διάλεξε αλυσίδα/υποκατηγορία από το μενού."); return; }
     const v = { ...form, id: uid() };
     setVisits([v, ...visits]);
-    setForm(f=>({ ...f, id:"", venueCity:"" })); // καθάρισε βασικά πεδία
+    setForm(f=>({ ...f, id:"", venueCity:"" })); // καθάρισε πεδία εισόδου
   }
   function removeVisit(id){ if(!confirm("Διαγραφή;")) return; setVisits(visits.filter(v=>v.id!==id)); }
   function updateVisit(id, patch){ setVisits(visits.map(v=>v.id===id?{...v, ...patch}:v)); }
 
-  // --- Βοηθοί απόδοσης UI (χωρίς JSX)
   return (
     React.createElement("div", {className:"min-h-screen md:flex bg-gray-50"},
 
-      // ===== Sidebar (Μενού) =====
+      /* ===== Sidebar (Μενού) ===== */
       React.createElement("aside", {className:"md:w-72 border-r bg-white"},
         React.createElement("div", {className:"p-3 border-b flex items-center justify-between"},
           React.createElement("div",{className:"text-sm font-semibold"},"Μενού"),
@@ -76,15 +75,13 @@ function App(){
 
         // Κουμπιά μενού (φιλτραρισμένα)
         React.createElement("nav",{className:"p-2 space-y-1"},
-          // Επίπεδο MENU
           nav.level==="menu" && React.createElement("button",{
             className:"w-full text-left px-3 py-2 rounded-xl hover:bg-gray-50",
             onClick:()=>setNav({level:"chains"})
           },"Αλυσίδες"),
 
-          // Επίπεδο CHAINS (με φίλτρο αναζήτησης)
           nav.level==="chains" && CHAINS
-            .filter(ch => (`${ch.name}`).toLowerCase().includes(menuQuery.toLowerCase()))
+            .filter(ch => ch.name.toLowerCase().includes(menuQuery.toLowerCase()))
             .map(ch =>
               React.createElement("button",{
                 key:ch.name,
@@ -93,7 +90,6 @@ function App(){
               }, ch.name)
             ),
 
-          // Επίπεδο SUBS (με φίλτρο αναζήτησης στο συνδυαστικό κείμενο)
           nav.level==="sub" && CHAINS
             .find(x=>x.name===nav.chain)?.subs
             .filter(s => (`${nav.chain} ${s}`).toLowerCase().includes(menuQuery.toLowerCase()))
@@ -107,7 +103,7 @@ function App(){
         )
       ),
 
-      // ===== Main =====
+      /* ===== Main ===== */
       React.createElement("main",{className:"flex-1 p-4 space-y-4"},
         React.createElement("header",{className:"flex items-center justify-between"},
           React.createElement("h1",{className:"text-xl font-bold"},"Wolt — Επισκέψεις"),
@@ -121,25 +117,38 @@ function App(){
           React.createElement("section",{className:"bg-white rounded-2xl p-3 shadow"},
             React.createElement("h2",{className:"font-semibold mb-2"},"Νέα επίσκεψη"),
 
-              // i. Owner Name
-              Select("Owner Name", { value:form.ownerName, onChange:e=>setForm({...form, ownerName:e.target.value}) },
+            // 👉 Χωρίς τα πεδία Αλυσίδα/Υποκατηγορία
+            React.createElement("div",{className:"grid grid-cols-1 md:grid-cols-3 gap-3"},
+              Select("Owner Name", {
+                value:form.ownerName,
+                onChange:e=>setForm({...form, ownerName:e.target.value})
+              },
                 MEMBERS.map(n=>React.createElement("option",{key:n,value:n},n))
               ),
 
-              // ii. Venue city
-              Input("Venue city", { value:form.venueCity, onChange:e=>setForm({...form, venueCity:e.target.value}) }),
+              Input("Venue city", {
+                value:form.venueCity,
+                onChange:e=>setForm({...form, venueCity:e.target.value})
+              }),
 
-              // iii. Visit Date
-              Input("Visit Date", { type:"date", value:form.visitDate, onChange:e=>setForm({...form, visitDate:e.target.value}) }),
+              Input("Visit Date", {
+                type:"date",
+                value:form.visitDate,
+                onChange:e=>setForm({...form, visitDate:e.target.value})
+              }),
 
-              // iv. Needs Follow Up
-              Select("Needs Follow Up", { value:form.needsFollowUp, onChange:e=>setForm({...form, needsFollowUp:e.target.value}) },
+              Select("Needs Follow Up", {
+                value:form.needsFollowUp,
+                onChange:e=>setForm({...form, needsFollowUp:e.target.value})
+              },
                 React.createElement("option",{value:"no"},"no"),
                 React.createElement("option",{value:"yes"},"yes"),
               ),
 
-              // v. Visit Status
-              Select("Visit Status", { value:form.visitStatus, onChange:e=>setForm({...form, visitStatus:e.target.value}) },
+              Select("Visit Status", {
+                value:form.visitStatus,
+                onChange:e=>setForm({...form, visitStatus:e.target.value})
+              },
                 VISIT_STATUSES.map(s=>React.createElement("option",{key:s.id,value:s.id},s.label))
               ),
             ),
@@ -182,12 +191,6 @@ function Select(label, props, children){
   return React.createElement("label",{className:"block"},
     Label(label),
     React.createElement("select",{...props, className:"w-full rounded-xl border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"}, children)
-  );
-}
-function ReadOnly(label, value){
-  return React.createElement("label",{className:"block"},
-    Label(label),
-    React.createElement("input",{value, readOnly:true, className:"w-full rounded-xl border px-3 py-2 text-sm bg-gray-50"})
   );
 }
 
