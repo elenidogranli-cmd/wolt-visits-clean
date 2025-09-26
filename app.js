@@ -1,45 +1,40 @@
-// Απλό, καθαρό JS (χωρίς imports)
+// Clean app.js — χωρίς "Ομάδα", με σταθερό dropdown "Μέλος"
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 const todayISO = () => new Date().toISOString().slice(0, 10);
 const save = (k,v)=>localStorage.setItem(k, JSON.stringify(v));
 const load = (k,f)=>{ try{const v=JSON.parse(localStorage.getItem(k)); return v??f;}catch{return f;} };
 
-// Δομή μενού → αλυσίδες → υποκατηγορίες
+// Μενού → Αλυσίδες → Υποκατηγορίες
 const CHAINS = [
   { name: "Μασούτης", subs: ["Αγγελάκη", "Μακεδονίας"] },
-  { name: "Σκλαβενίτης", subs: ["Αγγελάκη", "Μακεδονίας"] },
+  // Αν θέλεις και Σκλαβενίτη, πρόσθεσε:
+  // { name: "Σκλαβενίτης", subs: ["Αγγελάκη", "Μακεδονίας"] },
 ];
 
-const DEFAULT_TEAM = [
-  { id: "eleni", name: "Eleni" },
-  { id: "member2", name: "Μέλος 2" },
-  { id: "member3", name: "Μέλος 3" },
-];
+// Σταθερή λίστα μελών (αντί για "Ομάδα")
+const MEMBERS = ["Ελένη", "Τάσος", "Παρασκευή"];
+
 const STATUSES = [
-  { id: "planned", label: "Προγραμματισμένο" },
+  { id: "planned",   label: "Προγραμματισμένο" },
   { id: "completed", label: "Ολοκληρωμένο" },
   { id: "cancelled", label: "Ακυρωμένο" },
 ];
 
 function App(){
   const [nav, setNav] = React.useState({ level: "menu", chain: null, sub: null });
-  const [team, setTeam] = React.useState(()=>load("wv_team", DEFAULT_TEAM));
   const [visits, setVisits] = React.useState(()=>load("wv_visits", []));
   const [form, setForm] = React.useState({
     id:"", chain:"", sub:"", venueName:"", venueCity:"",
-    visitDate: todayISO(), status:"planned", assignedTo:"eleni"
+    visitDate: todayISO(), status:"planned",
+    assignedTo: MEMBERS[0] // προεπιλογή: "Ελένη"
   });
 
-  React.useEffect(()=>save("wv_team", team), [team]);
   React.useEffect(()=>save("wv_visits", visits), [visits]);
 
   // Όταν αλλάζει context, ενημέρωσε τη φόρμα
   React.useEffect(()=>{
-    setForm(f=>({ ...f,
-      chain: nav.chain || "",
-      sub: nav.sub || ""
-    }));
+    setForm(f=>({ ...f, chain: nav.chain || "", sub: nav.sub || "" }));
   }, [nav.chain, nav.sub]);
 
   function addVisit(){
@@ -53,7 +48,7 @@ function App(){
 
   // UI
   return (
-    React.createElement("div", {className:"min-h-screen md:flex"},
+    React.createElement("div", {className:"min-h-screen md:flex bg-gray-50"},
       // Sidebar
       React.createElement("aside", {className:"md:w-72 border-r bg-white"},
         React.createElement("div", {className:"p-3 border-b flex items-center justify-between"},
@@ -104,16 +99,17 @@ function App(){
           React.createElement("section",{className:"bg-white rounded-2xl p-3 shadow"},
             React.createElement("h2",{className:"font-semibold mb-2"},"Νέα επίσκεψη"),
             React.createElement("div",{className:"grid grid-cols-1 md:grid-cols-3 gap-3"},
-              Input("Αλυσίδα", {value:form.chain, readOnly:true}),
-              Input("Υποκατηγορία", {value:form.sub, readOnly:true}),
-              Input("Venue Name", {value:form.venueName, onChange:e=>setForm({...form, venueName:e.target.value})}),
-              Input("Venue City", {value:form.venueCity, onChange:e=>setForm({...form, venueCity:e.target.value})}),
-              Input("Visit Date", {type:"date", value:form.visitDate, onChange:e=>setForm({...form, visitDate:e.target.value})}),
-              Select("Κατάσταση", {value:form.status, onChange:e=>setForm({...form, status:e.target.value})},
+              Input("Αλυσίδα",         {value:form.chain, readOnly:true}),
+              Input("Υποκατηγορία",    {value:form.sub,   readOnly:true}),
+              Input("Venue Name",      {value:form.venueName, onChange:e=>setForm({...form, venueName:e.target.value})}),
+              Input("Venue City",      {value:form.venueCity, onChange:e=>setForm({...form, venueCity:e.target.value})}),
+              Input("Visit Date",      {type:"date", value:form.visitDate, onChange:e=>setForm({...form, visitDate:e.target.value})}),
+              Select("Κατάσταση",      {value:form.status, onChange:e=>setForm({...form, status:e.target.value})},
                 STATUSES.map(s=>React.createElement("option",{key:s.id,value:s.id},s.label))
               ),
-              Select("Μέλος", {value:form.assignedTo, onChange:e=>setForm({...form, assignedTo:e.target.value})},
-                team.map(t=>React.createElement("option",{key:t.id,value:t.id},t.name))
+              // 🔽 ΕΔΩ το νέο dropdown "Μέλος" από τη σταθερή λίστα MEMBERS
+              Select("Μέλος",          {value:form.assignedTo, onChange:e=>setForm({...form, assignedTo:e.target.value})},
+                MEMBERS.map(name=>React.createElement("option",{key:name,value:name},name))
               ),
             ),
             React.createElement("div",{className:"mt-3 flex justify-end"},
@@ -127,26 +123,16 @@ function App(){
             React.createElement("h2",{className:"font-semibold mb-2"},"Επισκέψεις"),
             visits.filter(v=>
               (!nav.chain || v.chain===nav.chain) &&
-              (!nav.sub || v.sub===nav.sub)
+              (!nav.sub  || v.sub===nav.sub)
             ).length===0
               ? React.createElement("div",{className:"text-sm text-gray-600"},"Δεν υπάρχουν εγγραφές.")
               : React.createElement("div",{className:"grid gap-2"},
                   visits.filter(v=>
                     (!nav.chain || v.chain===nav.chain) &&
-                    (!nav.sub || v.sub===nav.sub)
-                  ).map(v=> React.createElement(Card, {key:v.id, v, team, onUpdate:updateVisit, onRemove:removeVisit}))
+                    (!nav.sub  || v.sub===nav.sub)
+                  ).map(v=> React.createElement(Card, {key:v.id, v, onUpdate:updateVisit, onRemove:removeVisit}))
                 )
           ),
-
-        // Ομάδα
-        React.createElement("section",{className:"bg-white rounded-2xl p-3 shadow"},
-          React.createElement("h2",{className:"font-semibold mb-2"},"Ομάδα"),
-          React.createElement("div",{className:"grid grid-cols-1 md:grid-cols-3 gap-2"},
-            team.map((m,i)=>
-              Input(`Μέλος ${i+1}`, {value:m.name, onChange:e=>setTeam(team.map(t=>t.id===m.id?{...t,name:e.target.value}:t))})
-            )
-          )
-        )
       )
     )
   );
@@ -165,8 +151,8 @@ function Select(label, props, children){
     React.createElement("select",{...props, className:"w-full rounded-xl border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"}, children)
   );
 }
-function Card({v, team, onUpdate, onRemove}){
-  const memberName = team.find(t=>t.id===v.assignedTo)?.name || "—";
+function Card({v, onUpdate, onRemove}){
+  const memberName = v.assignedTo || "—";
   return React.createElement("div",{className:"rounded-2xl border p-3 shadow-sm"},
     React.createElement("div",{className:"flex items-start justify-between"},
       React.createElement("div",null,
