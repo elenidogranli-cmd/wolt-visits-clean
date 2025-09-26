@@ -121,11 +121,6 @@ function App(){
           React.createElement("section",{className:"bg-white rounded-2xl p-3 shadow"},
             React.createElement("h2",{className:"font-semibold mb-2"},"Νέα επίσκεψη"),
 
-            React.createElement("div",{className:"grid grid-cols-1 md:grid-cols-3 gap-3"},
-              // Chain/Sub μόνο για ανάγνωση (ώστε να ξέρουμε πού γράφεται)
-              ReadOnly("Αλυσίδα",      form.chain),
-              ReadOnly("Υποκατηγορία", form.sub),
-
               // i. Owner Name
               Select("Owner Name", { value:form.ownerName, onChange:e=>setForm({...form, ownerName:e.target.value}) },
                 MEMBERS.map(n=>React.createElement("option",{key:n,value:n},n))
