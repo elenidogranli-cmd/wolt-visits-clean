@@ -1,17 +1,16 @@
-// Wolt — Επισκέψεις (app.js) — χωρίς πεδία Αλυσίδα/Υποκατηγορία στη φόρμα
+// Wolt — Επισκέψεις / app.js (v9) — χωρίς πεδία Αλυσίδα/Υποκατηγορία στη φόρμα
+console.log("Wolt Visits — JS version 9");
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 const todayISO = () => new Date().toISOString().slice(0, 10);
 const save = (k,v)=>localStorage.setItem(k, JSON.stringify(v));
 const load = (k,f)=>{ try{const v=JSON.parse(localStorage.getItem(k)); return v??f;}catch{return f;} };
 
-// Μενού → Αλυσίδες → Υποκατηγορίες
 const CHAINS = [
   { name: "Μασούτης",   subs: ["Αγγελάκη", "Μακεδονίας"] },
   { name: "Σκλαβενίτης", subs: ["Αγγελάκη", "Μακεδονίας"] },
 ];
 
-// Σταθερές επιλογές
 const MEMBERS = ["Ελένη", "Τάσος", "Παρασκευή"];
 const VISIT_STATUSES = [
   { id: "planned", label: "planned" },
@@ -20,7 +19,7 @@ const VISIT_STATUSES = [
 
 function App(){
   const [nav, setNav] = React.useState({ level: "menu", chain: null, sub: null });
-  const [menuQuery, setMenuQuery] = React.useState("");          // αναζήτηση στο μενού
+  const [menuQuery, setMenuQuery] = React.useState("");
   const [visits, setVisits] = React.useState(()=>load("wv_visits", []));
   const [form, setForm] = React.useState({
     id:"", chain:"", sub:"",
@@ -33,7 +32,7 @@ function App(){
 
   React.useEffect(()=>save("wv_visits", visits), [visits]);
 
-  // συγχρονισμός context -> φόρμα (χωρίς να το δείχνουμε στη φόρμα)
+  // Κρατάμε chain/sub μόνο εσωτερικά (για αποθήκευση και φίλτρα), δεν τα δείχνουμε στη φόρμα
   React.useEffect(()=>{
     setForm(f=>({ ...f, chain: nav.chain || "", sub: nav.sub || "" }));
   }, [nav.chain, nav.sub]);
@@ -42,15 +41,14 @@ function App(){
     if(!form.chain || !form.sub){ alert("Διάλεξε αλυσίδα/υποκατηγορία από το μενού."); return; }
     const v = { ...form, id: uid() };
     setVisits([v, ...visits]);
-    setForm(f=>({ ...f, id:"", venueCity:"" })); // καθάρισε πεδία εισόδου
+    setForm(f=>({ ...f, id:"", venueCity:"" }));
   }
   function removeVisit(id){ if(!confirm("Διαγραφή;")) return; setVisits(visits.filter(v=>v.id!==id)); }
   function updateVisit(id, patch){ setVisits(visits.map(v=>v.id===id?{...v, ...patch}:v)); }
 
   return (
     React.createElement("div", {className:"min-h-screen md:flex bg-gray-50"},
-
-      /* ===== Sidebar (Μενού) ===== */
+      /* ===== Sidebar ===== */
       React.createElement("aside", {className:"md:w-72 border-r bg-white"},
         React.createElement("div", {className:"p-3 border-b flex items-center justify-between"},
           React.createElement("div",{className:"text-sm font-semibold"},"Μενού"),
@@ -62,8 +60,6 @@ function App(){
             )
           },"Πίσω")
         ),
-
-        // Μπάρα αναζήτησης
         React.createElement("div",{className:"p-2"},
           React.createElement("input",{
             placeholder:"Αναζήτηση αλυσίδας/υποκατηγορίας...",
@@ -72,14 +68,11 @@ function App(){
             className:"w-full rounded-xl border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
           })
         ),
-
-        // Κουμπιά μενού (φιλτραρισμένα)
         React.createElement("nav",{className:"p-2 space-y-1"},
           nav.level==="menu" && React.createElement("button",{
             className:"w-full text-left px-3 py-2 rounded-xl hover:bg-gray-50",
             onClick:()=>setNav({level:"chains"})
           },"Αλυσίδες"),
-
           nav.level==="chains" && CHAINS
             .filter(ch => ch.name.toLowerCase().includes(menuQuery.toLowerCase()))
             .map(ch =>
@@ -89,7 +82,6 @@ function App(){
                 onClick:()=>setNav({level:"sub", chain: ch.name})
               }, ch.name)
             ),
-
           nav.level==="sub" && CHAINS
             .find(x=>x.name===nav.chain)?.subs
             .filter(s => (`${nav.chain} ${s}`).toLowerCase().includes(menuQuery.toLowerCase()))
@@ -102,7 +94,6 @@ function App(){
             )
         )
       ),
-
       /* ===== Main ===== */
       React.createElement("main",{className:"flex-1 p-4 space-y-4"},
         React.createElement("header",{className:"flex items-center justify-between"},
@@ -111,32 +102,24 @@ function App(){
             (nav.chain||"—") + (nav.sub? ` • ${nav.sub}` : "")
           )
         ),
-
-        // Φόρμα μόνο όταν έχεις chain + sub
         (nav.level==="sub" && nav.chain && nav.sub) &&
           React.createElement("section",{className:"bg-white rounded-2xl p-3 shadow"},
             React.createElement("h2",{className:"font-semibold mb-2"},"Νέα επίσκεψη"),
-
-            // 👉 Χωρίς τα πεδία Αλυσίδα/Υποκατηγορία
+            // ✅ ΜΟΝΟ τα 5 πεδία που ζήτησες
             React.createElement("div",{className:"grid grid-cols-1 md:grid-cols-3 gap-3"},
               Select("Owner Name", {
                 value:form.ownerName,
                 onChange:e=>setForm({...form, ownerName:e.target.value})
-              },
-                MEMBERS.map(n=>React.createElement("option",{key:n,value:n},n))
-              ),
-
+              }, MEMBERS.map(n=>React.createElement("option",{key:n,value:n},n))),
               Input("Venue city", {
                 value:form.venueCity,
                 onChange:e=>setForm({...form, venueCity:e.target.value})
               }),
-
               Input("Visit Date", {
                 type:"date",
                 value:form.visitDate,
                 onChange:e=>setForm({...form, visitDate:e.target.value})
               }),
-
               Select("Needs Follow Up", {
                 value:form.needsFollowUp,
                 onChange:e=>setForm({...form, needsFollowUp:e.target.value})
@@ -144,21 +127,15 @@ function App(){
                 React.createElement("option",{value:"no"},"no"),
                 React.createElement("option",{value:"yes"},"yes"),
               ),
-
               Select("Visit Status", {
                 value:form.visitStatus,
                 onChange:e=>setForm({...form, visitStatus:e.target.value})
-              },
-                VISIT_STATUSES.map(s=>React.createElement("option",{key:s.id,value:s.id},s.label))
-              ),
+              }, VISIT_STATUSES.map(s=>React.createElement("option",{key:s.id,value:s.id},s.label))),
             ),
-
             React.createElement("div",{className:"mt-3 flex justify-end"},
               React.createElement("button",{className:"px-4 py-2 rounded-2xl bg-blue-600 text-white", onClick:addVisit},"Αποθήκευση")
             )
           ),
-
-        // Λίστα επισκέψεων του τρέχοντος scope
         (nav.chain || nav.sub) &&
           React.createElement("section",{className:"bg-white rounded-2xl p-3 shadow"},
             React.createElement("h2",{className:"font-semibold mb-2"},"Επισκέψεις"),
@@ -179,7 +156,7 @@ function App(){
   );
 }
 
-/* ---------- UI helpers (χωρίς JSX) ---------- */
+/* UI helpers */
 function Label(text){ return React.createElement("span",{className:"mb-1 block text-sm font-medium text-gray-700"}, text); }
 function Input(label, props){
   return React.createElement("label",{className:"block"},
@@ -193,7 +170,6 @@ function Select(label, props, children){
     React.createElement("select",{...props, className:"w-full rounded-xl border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"}, children)
   );
 }
-
 function Card({v, onUpdate, onRemove}){
   return React.createElement("div",{className:"rounded-2xl border p-3 shadow-sm"},
     React.createElement("div",{className:"flex items-start justify-between gap-2"},
@@ -218,7 +194,7 @@ function Card({v, onUpdate, onRemove}){
   );
 }
 
-/* ---------- Auto-mount ---------- */
+/* Auto-mount */
 (function(){
   const el = document.getElementById("root");
   const root = ReactDOM.createRoot(el);
