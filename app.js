@@ -88,7 +88,7 @@ function App(){
       // Main
       React.createElement("main",{className:"flex-1 p-4 space-y-4"},
         React.createElement("header",{className:"flex items-center justify-between"},
-          React.createElement("h1",{className:"text-xl font-bold"},"Wolt — Επισκέψεις (Clean)"),
+          React.createElement("h1",{className:"text-xl font-bold"},"Wolt — Επισκέψεις"),
           React.createElement("div",{className:"text-xs text-gray-600"},
             (nav.chain||"—") + (nav.sub? ` • ${nav.sub}` : "")
           )
